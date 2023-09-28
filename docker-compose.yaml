@@ -1,0 +1,110 @@
+version: '3'
+
+services:
+  #docker compose up
+  django:
+    image: ${DJANGO_IMAGE}
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/data
+    networks:
+      - django-net
+    #caminho para manage.py
+    working_dir: /data/src/
+    #comando para executar django
+    command: python3 manage.py runserver 0.0.0.0:8000
+
+  #docker compose up migrate
+  migrate:
+    image: ${DJANGO_IMAGE}
+    profiles: [ 'init' ]
+    volumes:
+      - ./:/data
+    networks:
+      - django-net
+    #caminho para manage.py
+    working_dir: /data/src/
+    #comando para makemigrations e migrate
+    command: /bin/bash -c "python3 manage.py makemigrations && python3 manage.py migrate"
+
+  #docker compose up populate
+  populate:
+    image: ${DJANGO_IMAGE}
+    profiles: [ 'init' ]
+    depends_on:
+      - migrate
+    volumes:
+      - ./:/data
+    networks:
+      - django-net
+    #caminho para manage.py
+    working_dir: /data/src/
+    #comando para executar o script 
+    command: /bin/bash -c "python3 manage.py runscript add_data"
+
+  #docker compose run bash
+  #-->> RUN <<--  ^^^  
+  bash:
+    image: ${DJANGO_IMAGE}
+    profiles: [ 'bash' ]
+    stdin_open: true
+    tty: true
+    user: "${UID}:${GID}"
+    volumes:
+      - ./:/src
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+    working_dir: /src/
+    command: /bin/bash
+
+  ubuntu:
+    image: ubuntu
+    profiles: [ 'test' ]
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./:/src
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+    user: "${UID}:${GID}"
+    environment:
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+    networks:
+      - django-net
+    working_dir: /data/
+    command: /bin/bash
+
+  #docker compose up postgres
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:16.0-bullseye}
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./db:/var/lib/postgresql/data
+    networks:
+      - django-net
+
+  # https://www.pgadmin.org/docs/pgadmin4/latest/container_deployment.html
+  # docker compose up pgadmin
+  pgadmin:
+    image: ${PGADMIN_IMAGE:-dpage/pgadmin4:7.7}
+    profiles: [ 'monitor' ]
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-darlonv@gmail.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-pg#2023}
+    ports:
+      - "16543:80"
+    networks:
+      - django-net
+
+networks:
+  django-net:
+    driver: bridge
