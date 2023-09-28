@@ -12,5 +12,5 @@ docker build --no-cache -t ${IMAGE} .
 docker tag ${IMAGE} ${IMAGE_LATEST}
 
 docker login
-# docker push ${IMAGE} 
+docker push ${IMAGE} 
 # docker push ${IMAGE_LATEST}
