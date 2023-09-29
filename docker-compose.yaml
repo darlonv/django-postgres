@@ -22,6 +22,8 @@ services:
   #docker compose up migrate
   migrate:
     image: ${DJANGO_IMAGE}
+    depends_on:
+      - postgres
     profiles: [ 'init' ]
     volumes:
       - ./:/src
