@@ -3,7 +3,7 @@ version: '3'
 services:
   #docker compose up
   django:
-    image: ${DJANGO_IMAGE}
+    image: ${DOCKER_DJANGO_IMAGE:-darlon/django:3}
     depends_on:
       - postgres
     ports:
@@ -21,7 +21,7 @@ services:
 
   #docker compose up migrate
   migrate:
-    image: ${DJANGO_IMAGE}
+    image: ${DOCKER_DJANGO_IMAGE:-darlon/django:3}
     depends_on:
       - postgres
     profiles: [ 'init' ]
@@ -38,7 +38,7 @@ services:
 
   #docker compose up populate
   populate:
-    image: ${DJANGO_IMAGE}
+    image: ${DOCKER_DJANGO_IMAGE:-darlon/django:3}
     profiles: [ 'init' ]
     depends_on:
       - migrate
@@ -56,7 +56,7 @@ services:
   #docker compose run bash
   #-->> RUN <<--  ^^^  
   bash:
-    image: ${DJANGO_IMAGE}
+    image: ${DOCKER_DJANGO_IMAGE:-darlon/django:3}
     profiles: [ 'bash' ]
     stdin_open: true
     tty: true
@@ -77,10 +77,11 @@ services:
     image: ${POSTGRES_IMAGE:-postgres:16.0-bullseye}
     env_file:
       - .env
+    user: "${UID}:${GID}"
     ports:
       - "15432:5432"
-      # volumes:
-      # - ./db:/var/lib/postgresql/data
+    volumes:
+      - ./db/:/var/lib/postgresql/data/
     networks:
       - django-net
 
