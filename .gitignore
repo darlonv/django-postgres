@@ -1,8 +1,7 @@
 #database directory
 
-db/
+db/*
 !db/.empty
-
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
